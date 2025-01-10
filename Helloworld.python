@@ -1,0 +1,76 @@
+import psutil
+import subprocess
+import os
+
+def get_cpu_usage():
+    cpu_usage = psutil.cpu_percent(interval=1)
+    return cpu_usage
+
+def get_memory_usage():
+    memory = psutil.virtual_memory()
+    return {
+        'total': memory.total,
+        'used': memory.used,
+        'free': memory.available,
+        'percentage': memory.percent
+    }
+
+def get_disk_usage():
+    disk = psutil.disk_usage('/')
+    return {
+        'total': disk.total,
+        'used': disk.used,
+        'free': disk.free,
+        'percentage': disk.percent
+    }
+
+def get_top_processes_by_cpu():
+    processes = [(p.info['pid'], p.info['name'], p.info['cpu_percent']) for p in psutil.process_iter(attrs=['pid', 'name', 'cpu_percent'])]
+    sorted_processes = sorted(processes, key=lambda x: x[2], reverse=True)
+    return sorted_processes[:5]
+
+def get_top_processes_by_memory():
+    processes = [(p.info['pid'], p.info['name'], p.info['memory_info'].rss) for p in psutil.process_iter(attrs=['pid', 'name', 'memory_info'])]
+    sorted_processes = sorted(processes, key=lambda x: x[2], reverse=True)
+    return sorted_processes[:5]
+
+def format_size(bytes):
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if bytes < 1024:
+            return f"{bytes:.2f} {unit}"
+        bytes /= 1024
+
+if __name__ == "__main__":
+    print("Server Performance Stats")
+    print("-------------------------")
+
+    # CPU Usage
+    cpu_usage = get_cpu_usage()
+    print(f"Total CPU Usage: {cpu_usage}%")
+
+    # Memory Usage
+    memory = get_memory_usage()
+    print("Memory Usage:")
+    print(f"  Total: {format_size(memory['total'])}")
+    print(f"  Used: {format_size(memory['used'])}")
+    print(f"  Free: {format_size(memory['free'])}")
+    print(f"  Percentage: {memory['percentage']}%")
+
+    # Disk Usage
+    disk = get_disk_usage()
+    print("Disk Usage:")
+    print(f"  Total: {format_size(disk['total'])}")
+    print(f"  Used: {format_size(disk['used'])}")
+    print(f"  Free: {format_size(disk['free'])}")
+    print(f"  Percentage: {disk['percentage']}%")
+
+    # Top Processes by CPU Usage
+    print("Top 5 Processes by CPU Usage:")
+    for pid, name, cpu in get_top_processes_by_cpu():
+        print(f"  PID: {pid}, Name: {name}, CPU: {cpu}%")
+
+    # Top Processes by Memory Usage
+    print("Top 5 Processes by Memory Usage:")
+    for pid, name, memory in get_top_processes_by_memory():
+        print(f"  PID: {pid}, Name: {name}, Memory: {format_size(memory)}")
+
